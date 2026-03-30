@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>빗방울 모으기 대작전! 🌧️</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+body { margin: 0; overflow: hidden; width: 100vw; height: 100vh; font-family: 'Segoe UI', sans-serif; }
+canvas { display: block; }
+
+.screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+.screen.active { display: flex; }
+
+#startScreen {
+  background: linear-gradient(180deg, #b8d4e3 0%, #d4e8d0 40%, #f0e6d3 100%);
+}
+
+#resultScreen {
+  background: linear-gradient(180deg, #fce4ec 0%, #e8f5e9 50%, #fff8e1 100%);
+}
+
+.title { font-size: 2em; font-weight: bold; color: #4a6741; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); margin-bottom: 10px; text-align: center; }
+.subtitle { font-size: 1em; color: #6b8f71; margin-bottom: 30px; text-align: center; padding: 0 20px; line-height: 1.6; }
+.cast-display { font-size: 2.5em; margin: 10px 0 20px; }
+
+.btn {
+  min-width: 200px; min-height: 56px; padding: 14px 32px;
+  border: none; border-radius: 28px; font-size: 1.2em; font-weight: bold;
+  cursor: pointer; margin: 8px; transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.btn:active { transform: scale(0.95); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+
+.btn-baechu { background: linear-gradient(135deg, #a8d5a2, #7bc67e); color: #2d5a27; }
+.btn-kimchi { background: linear-gradient(135deg, #f4a6a0, #e87c73); color: #7a2520; }
+.btn-play { background: linear-gradient(135deg, #81d4fa, #4fc3f7); color: #01579b; }
+.btn-retry { background: linear-gradient(135deg, #ffcc80, #ffa726); color: #e65100; }
+
+.cup-select { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 20px 0; }
+.cup-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 28px; border-radius: 20px; border: 3px solid transparent;
+  cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.6);
+  min-height: 60px;
+}
+.cup-option.selected { border-color: #4fc3f7; background: rgba(79,195,247,0.2); transform: scale(1.05); }
+.cup-option span.emoji { font-size: 2em; }
+.cup-option span.label { font-size: 1.1em; font-weight: bold; color: #455a64; }
+
+.rules-box {
+  background: rgba(255,255,255,0.7); border-radius: 16px; padding: 16px 20px;
+  margin: 0 20px 20px; max-width: 340px; line-height: 1.7; font-size: 0.85em; color: #555;
+}
+.rules-box .rule-item { margin: 4px 0; }
+
+#gameCanvas { position: absolute; top: 0; left: 0; z-index: 5; }
+
+.hud {
+  position: absolute; top: 0; left: 0; width: 100%; z-index: 6;
+  display: none; padding: 12px 16px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.3), transparent);
+}
+.hud.active { display: flex; justify-content: space-between; align-items: center; }
+.hud-item {
+  background: rgba(255,255,255,0.85); border-radius: 20px; padding: 8px 16px;
+  font-size: 0.95em; font-weight: bold; color: #37474f;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.result-emoji { font-size: 4em; margin: 10px 0; }
+.result-score { font-size: 2.5em; font-weight: bold; color: #4a6741; margin: 10px 0; }
+.result-title { font-size: 1.5em; font-weight: bold; margin: 10px 0; text-align: center; }
+.result-msg { font-size: 1em; color: #666; text-align: center; padding: 0 30px; line-height: 1.6; margin: 10px 0; }
+.result-characters { font-size: 1.4em; margin: 15px 0; text-align: center; line-height: 2; }
+
+.score-pop {
+  position: absolute; z-index: 7; font-weight: bold; pointer-events: none;
+  animation: popUp 0.8s ease-out forwards;
+}
+@keyframes popUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(1.5); }
+}
+
+.rain-hint { font-size: 0.75em; color: #888; margin-top: 5px; }
+</style>
+</head>
+<body>
+
+<!-- START SCREEN -->
+<div id="startScreen" class="screen active">
+  <div class="title">🌧️ 빗방울 모으기 대작전!</div>
+  <div class="cast-display">🐩🤍</div>
+  <div class="subtitle">배추 · 김치와 함께<br>봄비를 모아보세요!</div>
+  
+  <div class="rules-box">
+    <div class="rule-item">💧 빗방울 터치 → <b>+1점</b></div>
+    <div class="rule-item">✨ 황금 빗방울 터치 → <b>+5점</b></div>
+    <div class="rule-item">⚡ 번개 터치 → <b>-3점</b></div>
+    <div class="rule-item">🏆 60초 안에 100점 이상 → 봄비 마스터!</div>
+  </div>
+
+  <div style="font-size:1em; font-weight:bold; color:#546e7a; margin-bottom:8px;">컵을 선택하세요!</div>
+  <div class="cup-select">
+    <div class="cup-option selected" id="cupBaechu" onclick="selectCup('baechu')">
+      <span class="emoji">🐩</span>
+      <span class="label">배추 컵 🥬</span>
+    </div>
+    <div class="cup-option" id="cupKimchi" onclick="selectCup('kimchi')">
+      <span class="emoji">🤍</span>
+      <span class="label">김치 컵 🌶️</span>
+    </div>
+  </div>
+
+  <button class="btn btn-play" onclick="startGame()">🌧️ 게임 시작!</button>
+</div>
+
+<!-- HUD -->
+<div id="hud" class="hud">
+  <div class="hud-item" id="hudScore">💧 0점</div>
+  <div class="hud-item" id="hudTime">⏱️ 60초</div>
+  <div class="hud-item" id="hudCup"></div>
+</div>
+
+<!-- GAME CANVAS -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- RESULT SCREEN -->
+<div id="resultScreen" class="screen">
+  <div class="result-emoji" id="resultEmoji"></div>
+  <div class="result-title" id="resultTitle"></div>
+  <div class="result-score" id="resultScore"></div>
+  <div class="result-msg" id="resultMsg"></div>
+  <div class="result-characters" id="resultChars"></div>
+  <button class="btn btn-retry" onclick="goToStart()">🔄 다시 하기</button>
+</div>
+
+<script>
+// Game state
+let selectedCup = 'baechu';
+let score = 0;
+let timeLeft = 60;
+let gameRunning = false;
+let drops = [];
+let particles = [];
+let backgroundRain = [];
+let timerInterval = null;
+let animFrameId = null;
+let canvas, ctx;
+let W, H;
+let cupX, cupY;
+let touchActive = false;
+let combo = 0;
+let maxCombo = 0;
+let totalCaught = 0;
+let goldenCaught = 0;
+let lightningHit = 0;
+
+// Audio context for rain sounds
+let audioCtx = null;
+
+function initAudio() {
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } catch(e) {}
+}
+
+function playDropSound(golden) {
+  if (!audioCtx) return;
+  try {
+    let osc = audioCtx.createOscillator();
+    let gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = golden ? 880 : 600 + Math.random() * 200;
+    gain.gain.value = 0.15;
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.2);
+  } catch(e) {}
+}
+
+function playLightningSound() {
+  if (!audioCtx) return;
+  try {
+    let osc = audioCtx.createOscillator();
+    let gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.value = 150;
+    gain.gain.value = 0.2;
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
+  } catch(e) {}
+}
+
+function selectCup(cup) {
+  selectedCup = cup;
+  document.getElementById('cupBaechu').classList.toggle('selected', cup === 'baechu');
+  document.getElementById('cupKimchi').classList.toggle('selected', cup === 'kimchi');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goToStart() {
+  showScreen('startScreen');
+  document.getElementById('hud').classList.remove('active');
+  cancelAnimationFrame(animFrameId);
+  clearInterval(timerInterval);
+  gameRunning = false;
+}
+
+function startGame() {
+  initAudio();
+  score = 0;
+  timeLeft = 60;
+  gameRunning = true;
+  drops = [];
+  particles = [];
+  backgroundRain = [];
+  combo = 0;
+  maxCombo = 0;
+  totalCaught = 0;
+  goldenCaught = 0;
+  lightningHit = 0;
+
+  canvas = document.getElementById('gameCanvas');
+  ctx = canvas.getContext('2d');
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+
+  cupX = W / 2;
+  cupY = H - 100;
+
+  showScreen('');
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('hud').classList.add('active');
+
+  let cupEmoji = selectedCup === 'baechu' ? '🐩🥬' : '🤍🌶️';
+  document.getElementById('hudCup').textContent = cupEmoji;
+  updateHUD();
+
+  // Init background rain
+  for (let i = 0; i < 80; i++) {
+    backgroundRain.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      speed: 4 + Math.random() * 6,
+      length: 10 + Math.random() * 20,
+      opacity: 0.1 + Math.random() * 0.2
+    });
+  }
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateHUD();
+    if (timeLeft <= 0) {
+      endGame();
+    }
+  }, 1000);
+
+  gameLoop();
+  spawnDrop();
+}
+
+function updateHUD() {
+  document.getElementById('hudScore').textContent = '💧 ' + score + '점';
+  document.getElementById('hudTime').textContent = '⏱️ ' + timeLeft + '초';
+}
+
+function spawnDrop() {
+  if (!gameRunning) return;
+
+  let type = 'normal';
+  let rand = Math.random();
+  if (rand < 0.08) type = 'lightning';
+  else if (rand < 0.18) type = 'golden';
+
+  let size = type === 'lightning' ? 32 : (type === 'golden' ? 28 : 22);
+  let speed = 2 + Math.random() * 2;
+  
+  // Increase difficulty over time
+  let elapsed = 60 - timeLeft;
+  speed += elapsed * 0.03;
+
+  drops.push({
+    x: 20 + Math.random() * (W - 40),
+    y: -30,
+    size: size,
+    speed: speed,
+    type: type,
+    wobble: Math.random() * Math.PI * 2,
+    wobbleSpeed: 0.02 + Math.random() * 0.03,
+    opacity: 1,
+    sparkle: 0
+  });
+
+  // Spawn rate increases over time
+  let delay = Math.max(200, 600 - elapsed * 5);
+  setTimeout(spawnDrop, delay + Math.random() * 300);
+}
+
+function gameLoop() {
+  if (!gameRunning) return;
+  animFrameId = requestAnimationFrame(gameLoop);
+
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+  drawBackgroundRain();
+  updateAndDrawDrops();
+  updateAndDrawParticles();
+  drawCup();
+}
+
+function drawBackground() {
+  // Sky gradient - spring rain atmosphere
+  let grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, '#8bb5cf');
+  grad.addColorStop(0.3, '#a8c8d8');
+  grad.addColorStop(0.6, '#c4d9c0');
+  grad.addColorStop(1, '#d4c9a8');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Clouds
+  ctx.fillStyle = 'rgba(200, 215, 225, 0.6)';
+  drawCloud(W * 0.15, 60, 60);
+  drawCloud(W * 0.55, 40, 50);
+  drawCloud(W * 0.8, 80, 45);
+  drawCloud(W * 0.35, 100, 55);
+
+  // Window frame hint at bottom
+  ctx.fillStyle = 'rgba(139, 119, 101, 0.2)';
+  ctx.fillRect(0, H - 60, W, 60);
+  ctx.fillStyle = 'rgba(160, 140, 120, 0.15)';
+  ctx.fillRect(0, H - 65, W, 5);
+
+  // Windowsill detail
+  ctx.fillStyle = 'rgba(180, 160, 140, 0.2)';
+  ctx.fillRect(0, H - 70, W, 12);
+}
+
+function drawCloud(x, y, size) {
+  ctx.beginPath();
+  ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+  ctx.arc(x + size * 0.35, y - size * 0.15, size * 0.4, 0, Math.PI * 2);
+  ctx.arc(x + size * 0.6, y, size * 0.35, 0, Math.PI * 2);
+  ctx.arc(x - size * 0.25, y + size * 0.05, size * 0.35, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawBackgroundRain() {
+  ctx.strokeStyle = 'rgba(150, 180, 210, 0.3)';
+  ctx.lineWidth = 1;
+  backgroundRain.forEach(r => {
+    r.y += r.speed;
+    if (r.y > H) { r.y = -r.length; r.x = Math.random() * W; }
+    ctx.globalAlpha = r.opacity;
+    ctx.beginPath();
+    ctx.moveTo(r.x, r.y);
+    ctx.lineTo(r.x - 1, r.y + r.length);
+    ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
+}
+
+function updateAndDrawDrops() {
+  for (let i = drops.length - 1; i >= 0; i--) {
+    let d = drops[i];
+    d.y += d.speed;
+    d.wobble += d.wobbleSpeed;
+    d.x += Math.sin(d.wobble) * 0.5;
+    d.sparkle += 0.1;
+
+    if (d.y > H + 40) {
+      drops.splice(i, 1);
+      if (d.type !== 'lightning') { combo = 0; }
+      continue;
+    }
+
+    drawDrop(d);
+  }
+}
+
+function drawDrop(d) {
+  ctx.save();
+  ctx.translate(d.x, d.y);
+
+  if (d.type === 'normal') {
+    // Cute water drop
+    ctx.fillStyle = 'rgba(100, 180, 255, 0.85)';
+    ctx.beginPath();
+    ctx.moveTo(0, -d.size * 0.6);
+    ctx.bezierCurveTo(-d.size * 0.5, -d.size * 0.1, -d.size * 0.45, d.size * 0.4, 0, d.size * 0.5);
+    ctx.bezierCurveTo(d.size * 0.45, d.size * 0.4, d.size * 0.5, -d.size * 0.1, 0, -d.size * 0.6);
+    ctx.fill();
+    // Shine
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.beginPath();
+    ctx.ellipse(-d.size * 0.12, -d.size * 0.15, d.size * 0.08, d.size * 0.12, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (d.type === 'golden') {
+    // Golden sparkle drop
+    let glow = 0.6 + Math.sin(d.sparkle * 3) * 0.4;
+    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+    ctx.shadowBlur = 15 * glow;
+    ctx.fillStyle = `rgba(255, 215, 0, ${0.8 + glow * 0.2})`;
+    ctx.beginPath();
+    ctx.moveTo(0, -d.size * 0.7);
+    ctx.bezierCurveTo(-d.size * 0.55, -d.size * 0.1, -d.size * 0.5, d.size * 0.45, 0, d.size * 0.55);
+    ctx.bezierCurveTo(d.size * 0.5, d.size * 0.45, d.size * 0.55, -d.size * 0.1, 0, -d.size * 0.7);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Star sparkles around
+    ctx.fillStyle = 'rgba(255,255,200,0.9)';
+    ctx.font = `${10 + glow * 4}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('✨', d.size * 0.5 * Math.cos(d.sparkle), -d.size * 0.3 + d.size * 0.3 * Math.sin(d.sparkle));
+    // Shine
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.beginPath();
+    ctx.ellipse(-d.size * 0.12, -d.size * 0.2, d.size * 0.07, d.size * 0.13, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (d.type === 'lightning') {
+    // Lightning bolt
+    let flash = 0.7 + Math.sin(d.sparkle * 5) * 0.3;
+    ctx.shadowColor = 'rgba(255, 255, 0, 0.6)';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = `rgba(255, 230, 50, ${flash})`;
+    ctx.font = `${d.size}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⚡', 0, 0);
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.restore();
+}
+
+function drawCup() {
+  ctx.save();
+  ctx.translate(cupX, cupY);
+
+  // Cup body
+  let cupW = 60, cupH = 50;
+  if (selectedCup === 'baechu') {
+    ctx.fillStyle = 'rgba(168, 213, 162, 0.9)';
+  } else {
+    ctx.fillStyle = 'rgba(244, 166, 160, 0.9)';
+  }
+
+  // Cup shape
+  ctx.beginPath();
+  ctx.moveTo(-cupW/2, -cupH/2);
+  ctx.lineTo(-cupW/2 + 8, cupH/2);
+  ctx.lineTo(cupW/2 - 8, cupH/2);
+  ctx.lineTo(cupW/2, -cupH/2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Cup emoji
+  ctx.font = '28px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  if (selectedCup === 'baechu') {
+    ctx.fillText('🐩', 0, 0);
+  } else {
+    ctx.fillText('🤍', 0, 0);
+  }
+
+  // Water level in cup (based on score)
+  let waterLevel = Math.min(score / 100, 1) * (cupH - 10);
+  if (waterLevel > 0) {
+    ctx.fillStyle = 'rgba(100, 180, 255, 0.4)';
+    ctx.beginPath();
+    let bottomW = cupW - 16;
+    let topW = bottomW + (16 * waterLevel / cupH);
+    let wy = cupH/2 - waterLevel;
+    ctx.moveTo(-bottomW/2 - (topW - bottomW)/2 * (waterLevel/cupH), cupH/2);
+    ctx.lineTo(bottomW/2 + (topW - bottomW)/2 * (waterLevel/cupH), cupH/2);
+    ctx.lineTo(bottomW/2 + (topW - bottomW)/2 * (waterLevel/cupH) - 2, wy);
+    ctx.lineTo(-bottomW/2 - (topW - bottomW)/2 * (waterLevel/cupH) + 2, wy);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function updateAndDrawParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.1;
+    p.life -= p.decay;
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function spawnParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: x, y: y,
+      vx: (Math.random() - 0.5) * 6,
+      vy: (Math.random() - 0.5) * 6 - 2,
+      size: 2 + Math.random() * 4,
+      color: color,
+      life: 1,
+      decay: 0.02 + Math.random() * 0.03
+    });
+  }
+}
+
+function showScorePop(x, y, text, color) {
+  let el = document.createElement('div');
+  el.className = 'score-pop';
+  el.textContent = text;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.color = color;
+  el.style.fontSize = '1.4em';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 800);
+}
+
+function handleTap(tx, ty) {
+  if (!gameRunning) return;
+
+  for (let i = drops.length - 1; i >= 0; i--) {
+    let d = drops[i];
+    let dx = tx - d.x;
+    let dy = ty - d.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    let hitRadius = d.size + 20; // generous hit area
+
+    if (dist < hitRadius) {
+      if (d.type === 'normal') {
+        score += 1;
+        combo++;
+        totalCaught++;
+        spawnParticles(d.x, d.y, 'rgba(100,180,255,0.8)', 8);
+        showScorePop(d.x, d.y, '+1 💧', '#4fc3f7');
+        playDropSound(false);
+      } else if (d.type === 'golden') {
+        score += 5;
+        combo++;
+        goldenCaught++;
+        totalCaught++;
+        spawnParticles(d.x, d.y, 'rgba(255,215,0,0.9)', 15);
+        showScorePop(d.x, d.y, '+5 ✨', '#ffd600');
+        playDropSound(true);
+      } else if (d.type === 'lightning') {
+        score = Math.max(0, score - 3);
+        combo = 0;
+        lightningHit++;
+        spawnParticles(d.x, d.y, 'rgba(255,50,50,0.8)', 12);
+        showScorePop(d.x, d.y, '-3 ⚡', '#ff5252');
+        playLightningSound();
+        // Screen flash
+        ctx.fillStyle = 'rgba(255,255,200,0.3)';
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      maxCombo = Math.max(maxCombo, combo);
+      drops.splice(i, 1);
+      updateHUD();
+      
+      // Bonus combo message
+      if (combo > 0 && combo % 10 === 0) {
+        showScorePop(W/2, H/2, '🔥 ' + combo + '콤보!', '#ff6d00');
+      }
+      
+      return; // Only catch one per tap
+    }
+  }
+}
+
+// Touch/click events
+document.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  for (let t of e.changedTouches) {
+    handleTap(t.clientX, t.clientY);
+  }
+}, { passive: false });
+
+document.addEventListener('click', function(e) {
+  handleTap(e.clientX, e.clientY);
+});
+
+function endGame() {
+  gameRunning = false;
+  clearInterval(timerInterval);
+  cancelAnimationFrame(animFrameId);
+  document.getElementById('hud').classList.remove('active');
+
+  let isMaster = score >= 100;
+  let cupName = selectedCup === 'baechu' ? '배추' : '김치';
+  let cupEmoji = selectedCup === 'baechu' ? '🐩' : '🤍';
+
+  let resultEmoji, resultTitle, resultMsg, titleColor;
+
+  if (score >= 150) {
+    resultEmoji = '🌈🏆🌈';
+    resultTitle = '🎊 전설의 봄비 마스터! 🎊
