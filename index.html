@@ -6,158 +6,219 @@
 <title>빗방울 모으기 대작전! 🌧️</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-body { margin: 0; overflow: hidden; width: 100vw; height: 100vh; font-family: 'Segoe UI', sans-serif; }
-canvas { display: block; }
-
-.screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+body { margin: 0; overflow: hidden; width: 100vw; height: 100vh; font-family: 'Segoe UI', sans-serif; background: #e8f4f8; }
+.screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; }
 .screen.active { display: flex; }
 
+/* START SCREEN */
 #startScreen {
-  background: linear-gradient(180deg, #b8d4e3 0%, #d4e8d0 40%, #f0e6d3 100%);
+  background: linear-gradient(180deg, #b8d8e8 0%, #d4eaf5 40%, #e8f0e0 100%);
+}
+.title-area {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.title-emoji { font-size: 60px; margin-bottom: 10px; }
+.title-text { font-size: 28px; font-weight: bold; color: #4a7c8f; text-shadow: 1px 1px 2px rgba(255,255,255,0.8); }
+.subtitle { font-size: 14px; color: #6a9aaa; margin-top: 8px; line-height: 1.6; }
+.cast-info { font-size: 16px; color: #5a8a9a; margin: 15px 0; padding: 12px 20px; background: rgba(255,255,255,0.6); border-radius: 20px; }
+.cup-select { display: flex; gap: 20px; margin: 20px 0; }
+.cup-btn {
+  width: 120px; height: 140px; border: 3px solid transparent; border-radius: 20px;
+  background: rgba(255,255,255,0.7); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s;
+}
+.cup-btn.selected { border-color: #ffaa55; background: rgba(255,200,150,0.5); transform: scale(1.05); }
+.cup-btn:active { transform: scale(0.95); }
+.cup-emoji { font-size: 50px; }
+.cup-name { font-size: 16px; font-weight: bold; color: #5a7a8a; margin-top: 8px; }
+.start-btn {
+  margin-top: 20px; padding: 15px 50px; font-size: 22px; font-weight: bold;
+  color: white; background: linear-gradient(135deg, #7bc6cc, #5aadba); border: none;
+  border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(90,173,186,0.4);
+  transition: all 0.2s;
+}
+.start-btn:active { transform: scale(0.95); }
+.start-btn:disabled { opacity: 0.5; }
+.date-info { font-size: 12px; color: #8ab; margin-top: 15px; }
+
+/* GAME SCREEN */
+#gameScreen {
+  background: linear-gradient(180deg, #a0c4d8 0%, #c8dde8 50%, #d8e8d0 100%);
+  position: relative;
+}
+.game-hud {
+  position: absolute; top: 0; left: 0; right: 0; padding: 10px 15px;
+  display: flex; justify-content: space-between; align-items: center;
+  background: rgba(255,255,255,0.4); backdrop-filter: blur(5px); z-index: 10;
+}
+.hud-item { display: flex; flex-direction: column; align-items: center; }
+.hud-label { font-size: 11px; color: #5a8a9a; }
+.hud-value { font-size: 18px; font-weight: bold; color: #3a6a7a; }
+.stage-badge {
+  padding: 4px 14px; background: linear-gradient(135deg, #ffcc66, #ffaa44);
+  border-radius: 15px; font-size: 13px; font-weight: bold; color: white;
+  box-shadow: 0 2px 8px rgba(255,170,68,0.4);
+}
+#gameCanvas {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+}
+.rain-bg-drop {
+  position: absolute; width: 2px; background: rgba(150,190,220,0.3);
+  border-radius: 1px; animation: rainFall linear infinite; pointer-events: none; z-index: 1;
+}
+@keyframes rainFall {
+  0% { transform: translateY(-10px); opacity: 0.3; }
+  100% { transform: translateY(100vh); opacity: 0; }
 }
 
+/* STAGE OVERLAY */
+.stage-overlay {
+  display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.4); z-index: 100; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.stage-overlay.active { display: flex; }
+.stage-overlay-box {
+  background: rgba(255,255,255,0.95); border-radius: 25px; padding: 30px 40px;
+  text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  animation: popIn 0.3s ease-out;
+}
+@keyframes popIn {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.stage-overlay-emoji { font-size: 50px; margin-bottom: 10px; }
+.stage-overlay-text { font-size: 24px; font-weight: bold; color: #4a7c8f; }
+.stage-overlay-sub { font-size: 14px; color: #7aaa; margin-top: 8px; }
+
+/* RESULT SCREEN */
 #resultScreen {
-  background: linear-gradient(180deg, #fce4ec 0%, #e8f5e9 50%, #fff8e1 100%);
+  background: linear-gradient(180deg, #f0e6ff 0%, #ffe6f0 50%, #fff0e6 100%);
 }
-
-.title { font-size: 2em; font-weight: bold; color: #4a6741; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); margin-bottom: 10px; text-align: center; }
-.subtitle { font-size: 1em; color: #6b8f71; margin-bottom: 30px; text-align: center; padding: 0 20px; line-height: 1.6; }
-.cast-display { font-size: 2.5em; margin: 10px 0 20px; }
-
-.btn {
-  min-width: 200px; min-height: 56px; padding: 14px 32px;
-  border: none; border-radius: 28px; font-size: 1.2em; font-weight: bold;
-  cursor: pointer; margin: 8px; transition: transform 0.1s, box-shadow 0.1s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+.result-box {
+  background: rgba(255,255,255,0.85); border-radius: 25px; padding: 30px;
+  text-align: center; width: 85%; max-width: 350px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
 }
-.btn:active { transform: scale(0.95); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-
-.btn-baechu { background: linear-gradient(135deg, #a8d5a2, #7bc67e); color: #2d5a27; }
-.btn-kimchi { background: linear-gradient(135deg, #f4a6a0, #e87c73); color: #7a2520; }
-.btn-play { background: linear-gradient(135deg, #81d4fa, #4fc3f7); color: #01579b; }
-.btn-retry { background: linear-gradient(135deg, #ffcc80, #ffa726); color: #e65100; }
-
-.cup-select { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 20px 0; }
-.cup-option {
-  display: flex; align-items: center; gap: 12px;
-  padding: 16px 28px; border-radius: 20px; border: 3px solid transparent;
-  cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.6);
-  min-height: 60px;
+.result-title { font-size: 28px; font-weight: bold; color: #7a5aaa; margin-bottom: 5px; }
+.result-chars { font-size: 50px; margin: 15px 0; }
+.result-score { font-size: 42px; font-weight: bold; color: #ff7755; margin: 10px 0; }
+.result-label { font-size: 14px; color: #8a8a9a; }
+.result-detail { font-size: 15px; color: #6a7a8a; margin: 5px 0; line-height: 1.8; }
+.result-badge {
+  display: inline-block; padding: 8px 20px; margin: 15px 0;
+  background: linear-gradient(135deg, #ffcc44, #ffaa22); border-radius: 20px;
+  font-size: 16px; font-weight: bold; color: white;
+  box-shadow: 0 3px 10px rgba(255,170,34,0.4);
 }
-.cup-option.selected { border-color: #4fc3f7; background: rgba(79,195,247,0.2); transform: scale(1.05); }
-.cup-option span.emoji { font-size: 2em; }
-.cup-option span.label { font-size: 1.1em; font-weight: bold; color: #455a64; }
-
-.rules-box {
-  background: rgba(255,255,255,0.7); border-radius: 16px; padding: 16px 20px;
-  margin: 0 20px 20px; max-width: 340px; line-height: 1.7; font-size: 0.85em; color: #555;
+.retry-btn {
+  margin-top: 15px; padding: 14px 45px; font-size: 20px; font-weight: bold;
+  color: white; background: linear-gradient(135deg, #aa88dd, #8866cc); border: none;
+  border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(136,102,204,0.4);
 }
-.rules-box .rule-item { margin: 4px 0; }
+.retry-btn:active { transform: scale(0.95); }
 
-#gameCanvas { position: absolute; top: 0; left: 0; z-index: 5; }
-
-.hud {
-  position: absolute; top: 0; left: 0; width: 100%; z-index: 6;
-  display: none; padding: 12px 16px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.3), transparent);
+/* Window frame decoration */
+.window-frame {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 60px;
+  background: linear-gradient(180deg, #c8b090, #a08060);
+  border-top: 4px solid #b09878; z-index: 5; pointer-events: none;
 }
-.hud.active { display: flex; justify-content: space-between; align-items: center; }
-.hud-item {
-  background: rgba(255,255,255,0.85); border-radius: 20px; padding: 8px 16px;
-  font-size: 0.95em; font-weight: bold; color: #37474f;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+.windowsill {
+  position: absolute; top: -8px; left: -5px; right: -5px; height: 12px;
+  background: #d4c0a0; border-radius: 3px;
 }
-
-.result-emoji { font-size: 4em; margin: 10px 0; }
-.result-score { font-size: 2.5em; font-weight: bold; color: #4a6741; margin: 10px 0; }
-.result-title { font-size: 1.5em; font-weight: bold; margin: 10px 0; text-align: center; }
-.result-msg { font-size: 1em; color: #666; text-align: center; padding: 0 30px; line-height: 1.6; margin: 10px 0; }
-.result-characters { font-size: 1.4em; margin: 15px 0; text-align: center; line-height: 2; }
-
-.score-pop {
-  position: absolute; z-index: 7; font-weight: bold; pointer-events: none;
-  animation: popUp 0.8s ease-out forwards;
-}
-@keyframes popUp {
-  0% { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(-60px) scale(1.5); }
-}
-
-.rain-hint { font-size: 0.75em; color: #888; margin-top: 5px; }
 </style>
 </head>
 <body>
 
 <!-- START SCREEN -->
 <div id="startScreen" class="screen active">
-  <div class="title">🌧️ 빗방울 모으기 대작전!</div>
-  <div class="cast-display">🐩🤍</div>
-  <div class="subtitle">배추 · 김치와 함께<br>봄비를 모아보세요!</div>
-  
-  <div class="rules-box">
-    <div class="rule-item">💧 빗방울 터치 → <b>+1점</b></div>
-    <div class="rule-item">✨ 황금 빗방울 터치 → <b>+5점</b></div>
-    <div class="rule-item">⚡ 번개 터치 → <b>-3점</b></div>
-    <div class="rule-item">🏆 60초 안에 100점 이상 → 봄비 마스터!</div>
+  <div class="title-area">
+    <div class="title-emoji">🌧️☔</div>
+    <div class="title-text">빗방울 모으기 대작전!</div>
+    <div class="subtitle">봄비가 내리는 창가에서<br>귀여운 컵으로 빗방울을 받아요!</div>
   </div>
-
-  <div style="font-size:1em; font-weight:bold; color:#546e7a; margin-bottom:8px;">컵을 선택하세요!</div>
+  <div class="cast-info">🐩 배추 · 김치 🤍</div>
+  <div style="font-size:13px; color:#6a9aaa; margin-bottom:5px;">컵을 선택하세요!</div>
   <div class="cup-select">
-    <div class="cup-option selected" id="cupBaechu" onclick="selectCup('baechu')">
-      <span class="emoji">🐩</span>
-      <span class="label">배추 컵 🥬</span>
+    <div class="cup-btn" id="cupBaechu" onclick="selectCup('baechu')">
+      <div class="cup-emoji">🐩</div>
+      <div class="cup-name">배추 컵</div>
     </div>
-    <div class="cup-option" id="cupKimchi" onclick="selectCup('kimchi')">
-      <span class="emoji">🤍</span>
-      <span class="label">김치 컵 🌶️</span>
+    <div class="cup-btn" id="cupKimchi" onclick="selectCup('kimchi')">
+      <div class="cup-emoji">🤍</div>
+      <div class="cup-name">김치 컵</div>
     </div>
   </div>
-
-  <button class="btn btn-play" onclick="startGame()">🌧️ 게임 시작!</button>
+  <button class="start-btn" id="startBtn" onclick="startGame()" disabled>게임 시작! 🌈</button>
+  <div class="date-info">2026년 3월 31일 · 봄비 시즌</div>
 </div>
 
-<!-- HUD -->
-<div id="hud" class="hud">
-  <div class="hud-item" id="hudScore">💧 0점</div>
-  <div class="hud-item" id="hudTime">⏱️ 60초</div>
-  <div class="hud-item" id="hudCup"></div>
-</div>
+<!-- GAME SCREEN -->
+<div id="gameScreen" class="screen">
+  <div class="game-hud">
+    <div class="hud-item">
+      <div class="hud-label">점수</div>
+      <div class="hud-value" id="hudScore">0</div>
+    </div>
+    <div class="stage-badge" id="hudStage">1단계</div>
+    <div class="hud-item">
+      <div class="hud-label">시간</div>
+      <div class="hud-value" id="hudTime">60</div>
+    </div>
+  </div>
+  <canvas id="gameCanvas"></canvas>
+  <div class="window-frame"><div class="windowsill"></div></div>
 
-<!-- GAME CANVAS -->
-<canvas id="gameCanvas"></canvas>
+  <!-- Stage overlay -->
+  <div class="stage-overlay" id="stageOverlay">
+    <div class="stage-overlay-box">
+      <div class="stage-overlay-emoji" id="stageOverlayEmoji">🌟</div>
+      <div class="stage-overlay-text" id="stageOverlayText">1단계 시작!</div>
+      <div class="stage-overlay-sub" id="stageOverlaySub">빗방울을 모아보세요!</div>
+    </div>
+  </div>
+</div>
 
 <!-- RESULT SCREEN -->
 <div id="resultScreen" class="screen">
-  <div class="result-emoji" id="resultEmoji"></div>
-  <div class="result-title" id="resultTitle"></div>
-  <div class="result-score" id="resultScore"></div>
-  <div class="result-msg" id="resultMsg"></div>
-  <div class="result-characters" id="resultChars"></div>
-  <button class="btn btn-retry" onclick="goToStart()">🔄 다시 하기</button>
+  <div class="result-box">
+    <div class="result-title">게임 결과 🌈</div>
+    <div class="result-chars" id="resultChars">🐩🤍</div>
+    <div class="result-label">최종 점수</div>
+    <div class="result-score" id="resultScore">0</div>
+    <div class="result-detail" id="resultDetail"></div>
+    <div class="result-badge" id="resultBadge">봄비 초보</div>
+    <br>
+    <button class="retry-btn" onclick="resetGame()">다시 하기 🔄</button>
+  </div>
 </div>
 
 <script>
 // Game state
-let selectedCup = 'baechu';
+let selectedCup = null;
 let score = 0;
 let timeLeft = 60;
+let currentStage = 1;
 let gameRunning = false;
+let gameTimer = null;
+let spawnTimer = null;
+let animFrame = null;
 let drops = [];
 let particles = [];
-let backgroundRain = [];
-let timerInterval = null;
-let animFrameId = null;
-let canvas, ctx;
-let W, H;
-let cupX, cupY;
-let touchActive = false;
-let combo = 0;
-let maxCombo = 0;
-let totalCaught = 0;
-let goldenCaught = 0;
-let lightningHit = 0;
+let cupX = 0;
+let cupY = 0;
+let canvasW = 0;
+let canvasH = 0;
+let ctx = null;
+let canvas = null;
+let stageStartTime = 0;
+let stageTime = [20, 20, 20]; // seconds per stage
+let bgRaindrops = [];
 
-// Audio context for rain sounds
+// Audio context for sound effects
 let audioCtx = null;
 
 function initAudio() {
@@ -166,399 +227,205 @@ function initAudio() {
   } catch(e) {}
 }
 
-function playDropSound(golden) {
+function playTone(freq, duration, type, vol) {
   if (!audioCtx) return;
   try {
-    let osc = audioCtx.createOscillator();
-    let gain = audioCtx.createGain();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    gain.gain.value = vol || 0.1;
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-    osc.type = 'sine';
-    osc.frequency.value = golden ? 880 : 600 + Math.random() * 200;
-    gain.gain.value = 0.15;
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.2);
+    osc.stop(audioCtx.currentTime + duration);
   } catch(e) {}
 }
 
-function playLightningSound() {
-  if (!audioCtx) return;
-  try {
-    let osc = audioCtx.createOscillator();
-    let gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.type = 'sawtooth';
-    osc.frequency.value = 150;
-    gain.gain.value = 0.2;
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.3);
-  } catch(e) {}
-}
+function playCollect() { playTone(880, 0.15, 'sine', 0.08); setTimeout(() => playTone(1100, 0.1, 'sine', 0.06), 50); }
+function playGold() { playTone(1200, 0.2, 'sine', 0.1); setTimeout(() => playTone(1500, 0.15, 'sine', 0.08), 80); setTimeout(() => playTone(1800, 0.1, 'sine', 0.06), 160); }
+function playLightning() { playTone(150, 0.3, 'sawtooth', 0.08); }
+function playDrop() { playTone(400 + Math.random()*200, 0.08, 'sine', 0.03); }
 
+// Cup selection
 function selectCup(cup) {
   selectedCup = cup;
   document.getElementById('cupBaechu').classList.toggle('selected', cup === 'baechu');
   document.getElementById('cupKimchi').classList.toggle('selected', cup === 'kimchi');
+  document.getElementById('startBtn').disabled = false;
 }
 
+// Screen management
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  if (id) document.getElementById(id).classList.add('active');
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
 }
 
-function goToStart() {
-  showScreen('startScreen');
-  document.getElementById('hud').classList.remove('active');
-  cancelAnimationFrame(animFrameId);
-  clearInterval(timerInterval);
-  gameRunning = false;
-}
-
+// Start game
 function startGame() {
   initAudio();
+  showScreen('gameScreen');
   score = 0;
   timeLeft = 60;
-  gameRunning = true;
+  currentStage = 1;
   drops = [];
   particles = [];
-  backgroundRain = [];
-  combo = 0;
-  maxCombo = 0;
-  totalCaught = 0;
-  goldenCaught = 0;
-  lightningHit = 0;
 
   canvas = document.getElementById('gameCanvas');
   ctx = canvas.getContext('2d');
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
+  resizeCanvas();
 
-  cupX = W / 2;
-  cupY = H - 100;
+  cupX = canvasW / 2;
+  cupY = canvasH - 100;
 
-  showScreen('');
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('hud').classList.add('active');
-
-  let cupEmoji = selectedCup === 'baechu' ? '🐩🥬' : '🤍🌶️';
-  document.getElementById('hudCup').textContent = cupEmoji;
   updateHUD();
+  showStageOverlay(1, '1단계 시작! 🌟', '보슬보슬 봄비를 모아요~', () => {
+    gameRunning = true;
+    stageStartTime = Date.now();
+    startTimers();
+    gameLoop();
+  });
+}
 
-  // Init background rain
-  for (let i = 0; i < 80; i++) {
-    backgroundRain.push({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      speed: 4 + Math.random() * 6,
-      length: 10 + Math.random() * 20,
-      opacity: 0.1 + Math.random() * 0.2
-    });
-  }
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvasW = canvas.width;
+  canvasH = canvas.height;
+}
 
-  timerInterval = setInterval(() => {
+window.addEventListener('resize', () => {
+  if (canvas) resizeCanvas();
+});
+
+// Stage overlay
+function showStageOverlay(stage, text, sub, callback) {
+  const overlay = document.getElementById('stageOverlay');
+  document.getElementById('stageOverlayText').textContent = text;
+  document.getElementById('stageOverlaySub').textContent = sub;
+  const emojis = ['🌟', '⭐⭐', '🌟⭐🌟'];
+  document.getElementById('stageOverlayEmoji').textContent = emojis[stage - 1] || '🌟';
+  overlay.classList.add('active');
+  setTimeout(() => {
+    overlay.classList.remove('active');
+    if (callback) callback();
+  }, 1500);
+}
+
+// Timers
+function startTimers() {
+  if (gameTimer) clearInterval(gameTimer);
+  if (spawnTimer) clearInterval(spawnTimer);
+
+  gameTimer = setInterval(() => {
+    if (!gameRunning) return;
     timeLeft--;
     updateHUD();
+    checkStageProgress();
     if (timeLeft <= 0) {
       endGame();
     }
   }, 1000);
 
-  gameLoop();
-  spawnDrop();
+  updateSpawnRate();
 }
 
-function updateHUD() {
-  document.getElementById('hudScore').textContent = '💧 ' + score + '점';
-  document.getElementById('hudTime').textContent = '⏱️ ' + timeLeft + '초';
+function updateSpawnRate() {
+  if (spawnTimer) clearInterval(spawnTimer);
+  let interval;
+  switch(currentStage) {
+    case 1: interval = 600; break;
+    case 2: interval = 400; break;
+    case 3: interval = 250; break;
+    default: interval = 600;
+  }
+  spawnTimer = setInterval(() => {
+    if (gameRunning) spawnDrop();
+  }, interval);
 }
 
+function checkStageProgress() {
+  const elapsed = (60 - timeLeft);
+  if (currentStage === 1 && elapsed >= 20) {
+    advanceStage(2);
+  } else if (currentStage === 2 && elapsed >= 40) {
+    advanceStage(3);
+  }
+}
+
+function advanceStage(newStage) {
+  gameRunning = false;
+  currentStage = newStage;
+  const texts = {
+    2: ['2단계 돌입! ⭐⭐', '빗방울이 빨라져요!'],
+    3: ['3단계 돌입! 🌟⭐🌟', '최고 난이도! 조심하세요!']
+  };
+  const t = texts[newStage] || ['다음 단계!', ''];
+  updateHUD();
+  showStageOverlay(newStage, t[0], t[1], () => {
+    gameRunning = true;
+    updateSpawnRate();
+  });
+}
+
+// Spawn drops
 function spawnDrop() {
-  if (!gameRunning) return;
+  let penaltyChance;
+  let goldChance = 0.08;
+  let speed;
+  switch(currentStage) {
+    case 1: penaltyChance = 0.10; speed = 2.5; break;
+    case 2: penaltyChance = 0.25; speed = 3.75; goldChance = 0.10; break;
+    case 3: penaltyChance = 0.40; speed = 6.25; goldChance = 0.12; break;
+    default: penaltyChance = 0.10; speed = 2.5;
+  }
 
   let type = 'normal';
-  let rand = Math.random();
-  if (rand < 0.08) type = 'lightning';
-  else if (rand < 0.18) type = 'golden';
+  const rand = Math.random();
+  if (rand < penaltyChance) {
+    type = 'lightning';
+  } else if (rand < penaltyChance + goldChance) {
+    type = 'gold';
+  }
 
-  let size = type === 'lightning' ? 32 : (type === 'golden' ? 28 : 22);
-  let speed = 2 + Math.random() * 2;
-  
-  // Increase difficulty over time
-  let elapsed = 60 - timeLeft;
-  speed += elapsed * 0.03;
+  const x = 20 + Math.random() * (canvasW - 40);
+  const baseSpeed = speed + Math.random() * 1.5;
+  const size = type === 'lightning' ? 28 : (type === 'gold' ? 22 : 18);
+  const wobble = (Math.random() - 0.5) * 0.5;
 
   drops.push({
-    x: 20 + Math.random() * (W - 40),
-    y: -30,
-    size: size,
-    speed: speed,
+    x: x,
+    y: -20,
+    speed: baseSpeed,
     type: type,
-    wobble: Math.random() * Math.PI * 2,
-    wobbleSpeed: 0.02 + Math.random() * 0.03,
-    opacity: 1,
+    size: size,
+    wobble: wobble,
+    wobblePhase: Math.random() * Math.PI * 2,
+    alive: true,
+    alpha: 1,
     sparkle: 0
   });
-
-  // Spawn rate increases over time
-  let delay = Math.max(200, 600 - elapsed * 5);
-  setTimeout(spawnDrop, delay + Math.random() * 300);
 }
 
-function gameLoop() {
-  if (!gameRunning) return;
-  animFrameId = requestAnimationFrame(gameLoop);
-
-  ctx.clearRect(0, 0, W, H);
-  drawBackground();
-  drawBackgroundRain();
-  updateAndDrawDrops();
-  updateAndDrawParticles();
-  drawCup();
+// Update HUD
+function updateHUD() {
+  document.getElementById('hudScore').textContent = score;
+  document.getElementById('hudTime').textContent = timeLeft;
+  const stageNames = ['1단계', '2단계', '3단계'];
+  document.getElementById('hudStage').textContent = stageNames[currentStage - 1] || '1단계';
 }
 
-function drawBackground() {
-  // Sky gradient - spring rain atmosphere
-  let grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, '#8bb5cf');
-  grad.addColorStop(0.3, '#a8c8d8');
-  grad.addColorStop(0.6, '#c4d9c0');
-  grad.addColorStop(1, '#d4c9a8');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  // Clouds
-  ctx.fillStyle = 'rgba(200, 215, 225, 0.6)';
-  drawCloud(W * 0.15, 60, 60);
-  drawCloud(W * 0.55, 40, 50);
-  drawCloud(W * 0.8, 80, 45);
-  drawCloud(W * 0.35, 100, 55);
-
-  // Window frame hint at bottom
-  ctx.fillStyle = 'rgba(139, 119, 101, 0.2)';
-  ctx.fillRect(0, H - 60, W, 60);
-  ctx.fillStyle = 'rgba(160, 140, 120, 0.15)';
-  ctx.fillRect(0, H - 65, W, 5);
-
-  // Windowsill detail
-  ctx.fillStyle = 'rgba(180, 160, 140, 0.2)';
-  ctx.fillRect(0, H - 70, W, 12);
-}
-
-function drawCloud(x, y, size) {
-  ctx.beginPath();
-  ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
-  ctx.arc(x + size * 0.35, y - size * 0.15, size * 0.4, 0, Math.PI * 2);
-  ctx.arc(x + size * 0.6, y, size * 0.35, 0, Math.PI * 2);
-  ctx.arc(x - size * 0.25, y + size * 0.05, size * 0.35, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-function drawBackgroundRain() {
-  ctx.strokeStyle = 'rgba(150, 180, 210, 0.3)';
-  ctx.lineWidth = 1;
-  backgroundRain.forEach(r => {
-    r.y += r.speed;
-    if (r.y > H) { r.y = -r.length; r.x = Math.random() * W; }
-    ctx.globalAlpha = r.opacity;
-    ctx.beginPath();
-    ctx.moveTo(r.x, r.y);
-    ctx.lineTo(r.x - 1, r.y + r.length);
-    ctx.stroke();
-  });
-  ctx.globalAlpha = 1;
-}
-
-function catchDrop(d, i) {
-  if (d.type === 'normal') {
-    score += 1; combo++; totalCaught++;
-    spawnParticles(d.x, d.y, 'rgba(100,180,255,0.8)', 8);
-    showScorePop(d.x, d.y - 20, '+1 💧', '#4fc3f7');
-    playDropSound(false);
-  } else if (d.type === 'golden') {
-    score += 5; combo++; goldenCaught++; totalCaught++;
-    spawnParticles(d.x, d.y, 'rgba(255,215,0,0.9)', 15);
-    showScorePop(d.x, d.y - 20, '+5 ✨', '#ffd600');
-    playDropSound(true);
-  } else if (d.type === 'lightning') {
-    score = Math.max(0, score - 3); combo = 0; lightningHit++;
-    spawnParticles(d.x, d.y, 'rgba(255,50,50,0.8)', 12);
-    showScorePop(d.x, d.y - 20, '-3 ⚡', '#ff5252');
-    playLightningSound();
-    ctx.fillStyle = 'rgba(255,255,200,0.3)';
-    ctx.fillRect(0, 0, W, H);
-  }
-  maxCombo = Math.max(maxCombo, combo);
-  drops.splice(i, 1);
-  updateHUD();
-  if (combo > 0 && combo % 10 === 0) {
-    showScorePop(W/2, H/2, '🔥 ' + combo + '콤보!', '#ff6d00');
-  }
-}
-
-function updateAndDrawDrops() {
-  const CUP_W = 60;
-  const CUP_CATCH_Y = cupY - 20;
-  for (let i = drops.length - 1; i >= 0; i--) {
-    let d = drops[i];
-    d.y += d.speed;
-    d.wobble += d.wobbleSpeed;
-    d.x += Math.sin(d.wobble) * 0.5;
-    d.sparkle += 0.1;
-
-    // Cup auto-catch
-    if (d.y >= CUP_CATCH_Y && d.y <= CUP_CATCH_Y + d.speed + 10 && Math.abs(d.x - cupX) < CUP_W / 2 + 8) {
-      catchDrop(d, i);
-      continue;
-    }
-
-    if (d.y > H + 40) {
-      drops.splice(i, 1);
-      if (d.type !== 'lightning') { combo = 0; }
-      continue;
-    }
-
-    drawDrop(d);
-  }
-}
-
-function drawDrop(d) {
-  ctx.save();
-  ctx.translate(d.x, d.y);
-
-  if (d.type === 'normal') {
-    // Cute water drop
-    ctx.fillStyle = 'rgba(100, 180, 255, 0.85)';
-    ctx.beginPath();
-    ctx.moveTo(0, -d.size * 0.6);
-    ctx.bezierCurveTo(-d.size * 0.5, -d.size * 0.1, -d.size * 0.45, d.size * 0.4, 0, d.size * 0.5);
-    ctx.bezierCurveTo(d.size * 0.45, d.size * 0.4, d.size * 0.5, -d.size * 0.1, 0, -d.size * 0.6);
-    ctx.fill();
-    // Shine
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.beginPath();
-    ctx.ellipse(-d.size * 0.12, -d.size * 0.15, d.size * 0.08, d.size * 0.12, -0.3, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (d.type === 'golden') {
-    // Golden sparkle drop
-    let glow = 0.6 + Math.sin(d.sparkle * 3) * 0.4;
-    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
-    ctx.shadowBlur = 15 * glow;
-    ctx.fillStyle = `rgba(255, 215, 0, ${0.8 + glow * 0.2})`;
-    ctx.beginPath();
-    ctx.moveTo(0, -d.size * 0.7);
-    ctx.bezierCurveTo(-d.size * 0.55, -d.size * 0.1, -d.size * 0.5, d.size * 0.45, 0, d.size * 0.55);
-    ctx.bezierCurveTo(d.size * 0.5, d.size * 0.45, d.size * 0.55, -d.size * 0.1, 0, -d.size * 0.7);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    // Star sparkles around
-    ctx.fillStyle = 'rgba(255,255,200,0.9)';
-    ctx.font = `${10 + glow * 4}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText('✨', d.size * 0.5 * Math.cos(d.sparkle), -d.size * 0.3 + d.size * 0.3 * Math.sin(d.sparkle));
-    // Shine
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.beginPath();
-    ctx.ellipse(-d.size * 0.12, -d.size * 0.2, d.size * 0.07, d.size * 0.13, -0.3, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (d.type === 'lightning') {
-    // Lightning bolt
-    let flash = 0.7 + Math.sin(d.sparkle * 5) * 0.3;
-    ctx.shadowColor = 'rgba(255, 255, 0, 0.6)';
-    ctx.shadowBlur = 10;
-    ctx.fillStyle = `rgba(255, 230, 50, ${flash})`;
-    ctx.font = `${d.size}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('⚡', 0, 0);
-    ctx.shadowBlur = 0;
-  }
-
-  ctx.restore();
-}
-
-function drawCup() {
-  ctx.save();
-  ctx.translate(cupX, cupY);
-
-  // Cup body
-  let cupW = 60, cupH = 50;
-  if (selectedCup === 'baechu') {
-    ctx.fillStyle = 'rgba(168, 213, 162, 0.9)';
-  } else {
-    ctx.fillStyle = 'rgba(244, 166, 160, 0.9)';
-  }
-
-  // Cup shape
-  ctx.beginPath();
-  ctx.moveTo(-cupW/2, -cupH/2);
-  ctx.lineTo(-cupW/2 + 8, cupH/2);
-  ctx.lineTo(cupW/2 - 8, cupH/2);
-  ctx.lineTo(cupW/2, -cupH/2);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Cup emoji
-  ctx.font = '28px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  if (selectedCup === 'baechu') {
-    ctx.fillText('🐩', 0, 0);
-  } else {
-    ctx.fillText('🤍', 0, 0);
-  }
-
-  // Water level in cup (based on score)
-  let waterLevel = Math.min(score / 100, 1) * (cupH - 10);
-  if (waterLevel > 0) {
-    ctx.fillStyle = 'rgba(100, 180, 255, 0.4)';
-    ctx.beginPath();
-    let bottomW = cupW - 16;
-    let topW = bottomW + (16 * waterLevel / cupH);
-    let wy = cupH/2 - waterLevel;
-    ctx.moveTo(-bottomW/2 - (topW - bottomW)/2 * (waterLevel/cupH), cupH/2);
-    ctx.lineTo(bottomW/2 + (topW - bottomW)/2 * (waterLevel/cupH), cupH/2);
-    ctx.lineTo(bottomW/2 + (topW - bottomW)/2 * (waterLevel/cupH) - 2, wy);
-    ctx.lineTo(-bottomW/2 - (topW - bottomW)/2 * (waterLevel/cupH) + 2, wy);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  ctx.restore();
-}
-
-function updateAndDrawParticles() {
-  for (let i = particles.length - 1; i >= 0; i--) {
-    let p = particles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.1;
-    p.life -= p.decay;
-    if (p.life <= 0) {
-      particles.splice(i, 1);
-      continue;
-    }
-    ctx.globalAlpha = p.life;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-}
-
-function spawnParticles(x, y, color, count) {
+// Particles
+function addParticles(x, y, color, count) {
   for (let i = 0; i < count; i++) {
     particles.push({
-      x: x, y: y,
+      x: x,
+      y: y,
       vx: (Math.random() - 0.5) * 6,
-      vy: (Math.random() - 0.5) * 6 - 2,
-      size: 2 + Math.random() * 4,
+      vy: -Math.random() * 5 - 2,
+      size: 3 + Math.random() * 4,
       color: color,
       life: 1,
       decay: 0.02 + Math.random() * 0.03
@@ -566,133 +433,210 @@ function spawnParticles(x, y, color, count) {
   }
 }
 
-function showScorePop(x, y, text, color) {
-  let el = document.createElement('div');
-  el.className = 'score-pop';
-  el.textContent = text;
-  el.style.left = x + 'px';
-  el.style.top = y + 'px';
-  el.style.color = color;
-  el.style.fontSize = '1.4em';
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 800);
+function addScoreText(x, y, text, color) {
+  particles.push({
+    x: x,
+    y: y,
+    vx: 0,
+    vy: -2,
+    size: 0,
+    color: color,
+    life: 1,
+    decay: 0.02,
+    text: text,
+    isText: true
+  });
 }
 
-function handleTap(tx, ty) {
+// Input handling
+let inputActive = false;
+
+function handleInput(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  cupX = (clientX - rect.left) * (canvas.width / rect.width);
+  cupY = Math.min((clientY - rect.top) * (canvas.height / rect.height), canvasH - 40);
+  cupY = Math.max(cupY, canvasH * 0.5);
+}
+
+// Mouse events
+document.addEventListener('mousemove', (e) => {
+  if (gameRunning) handleInput(e.clientX, e.clientY);
+});
+document.addEventListener('mousedown', (e) => {
+  if (gameRunning) { inputActive = true; handleInput(e.clientX, e.clientY); }
+});
+document.addEventListener('mouseup', () => { inputActive = false; });
+
+// Touch events
+document.addEventListener('touchstart', (e) => {
+  if (gameRunning) {
+    e.preventDefault();
+    inputActive = true;
+    const t = e.touches[0];
+    handleInput(t.clientX, t.clientY);
+  }
+}, { passive: false });
+document.addEventListener('touchmove', (e) => {
+  if (gameRunning) {
+    e.preventDefault();
+    const t = e.touches[0];
+    handleInput(t.clientX, t.clientY);
+  }
+}, { passive: false });
+document.addEventListener('touchend', () => { inputActive = false; });
+
+// Also handle tap on drops
+function checkTapOnDrop(clientX, clientY) {
   if (!gameRunning) return;
-
+  const rect = canvas.getBoundingClientRect();
+  const tx = (clientX - rect.left) * (canvas.width / rect.width);
+  const ty = (clientY - rect.top) * (canvas.height / rect.height);
+  
   for (let i = drops.length - 1; i >= 0; i--) {
-    let d = drops[i];
-    let dx = tx - d.x;
-    let dy = ty - d.y;
-    let dist = Math.sqrt(dx*dx + dy*dy);
-    let hitRadius = d.size + 20; // generous hit area
-
-    if (dist < hitRadius) {
-      if (d.type === 'normal') {
-        score += 1;
-        combo++;
-        totalCaught++;
-        spawnParticles(d.x, d.y, 'rgba(100,180,255,0.8)', 8);
-        showScorePop(d.x, d.y, '+1 💧', '#4fc3f7');
-        playDropSound(false);
-      } else if (d.type === 'golden') {
-        score += 5;
-        combo++;
-        goldenCaught++;
-        totalCaught++;
-        spawnParticles(d.x, d.y, 'rgba(255,215,0,0.9)', 15);
-        showScorePop(d.x, d.y, '+5 ✨', '#ffd600');
-        playDropSound(true);
-      } else if (d.type === 'lightning') {
-        score = Math.max(0, score - 3);
-        combo = 0;
-        lightningHit++;
-        spawnParticles(d.x, d.y, 'rgba(255,50,50,0.8)', 12);
-        showScorePop(d.x, d.y, '-3 ⚡', '#ff5252');
-        playLightningSound();
-        // Screen flash
-        ctx.fillStyle = 'rgba(255,255,200,0.3)';
-        ctx.fillRect(0, 0, W, H);
-      }
-
-      maxCombo = Math.max(maxCombo, combo);
-      drops.splice(i, 1);
-      updateHUD();
-      
-      // Bonus combo message
-      if (combo > 0 && combo % 10 === 0) {
-        showScorePop(W/2, H/2, '🔥 ' + combo + '콤보!', '#ff6d00');
-      }
-      
-      return; // Only catch one per tap
+    const d = drops[i];
+    if (!d.alive) continue;
+    const dist = Math.sqrt((d.x - tx) ** 2 + (d.y - ty) ** 2);
+    if (dist < d.size + 20) {
+      collectDrop(d, i);
+      break;
     }
   }
 }
 
-// Cup movement: mouse (desktop) + touch (mobile)
-document.addEventListener('mousemove', function(e) {
-  if (gameRunning) cupX = Math.max(40, Math.min(W - 40, e.clientX));
+canvas && canvas.addEventListener('click', (e) => {
+  checkTapOnDrop(e.clientX, e.clientY);
 });
-
-document.addEventListener('touchmove', function(e) {
-  if (gameRunning) {
-    e.preventDefault();
-    cupX = Math.max(40, Math.min(W - 40, e.touches[0].clientX));
+document.addEventListener('touchstart', (e) => {
+  if (gameRunning && canvas) {
+    const t = e.touches[0];
+    checkTapOnDrop(t.clientX, t.clientY);
   }
-}, { passive: false });
+}, { passive: true });
 
-document.addEventListener('touchstart', function(e) {
-  if (gameRunning) {
-    e.preventDefault();
-    cupX = Math.max(40, Math.min(W - 40, e.touches[0].clientX));
+function collectDrop(drop, index) {
+  drop.alive = false;
+  if (drop.type === 'normal') {
+    score += 1;
+    playCollect();
+    addParticles(drop.x, drop.y, 'rgba(100,180,255,0.8)', 6);
+    addScoreText(drop.x, drop.y - 20, '+1', '#5ac');
+  } else if (drop.type === 'gold') {
+    score += 5;
+    playGold();
+    addParticles(drop.x, drop.y, 'rgba(255,215,0,0.9)', 10);
+    addScoreText(drop.x, drop.y - 20, '+5 ✨', '#fa0');
+  } else if (drop.type === 'lightning') {
+    score = Math.max(0, score - 3);
+    playLightning();
+    addParticles(drop.x, drop.y, 'rgba(255,80,80,0.8)', 8);
+    addScoreText(drop.x, drop.y - 20, '-3 ⚡', '#f44');
   }
-}, { passive: false });
-
-function endGame() {
-  gameRunning = false;
-  clearInterval(timerInterval);
-  cancelAnimationFrame(animFrameId);
-  document.getElementById('hud').classList.remove('active');
-
-  let isMaster = score >= 100;
-  let cupName = selectedCup === 'baechu' ? '배추' : '김치';
-  let cupEmoji = selectedCup === 'baechu' ? '🐩' : '🤍';
-
-  let resultEmoji, resultTitle, resultMsg, titleColor;
-
-  if (score >= 150) {
-    resultEmoji = '🌈🏆🌈';
-    resultTitle = '🎊 전설의 봄비 마스터! 🎊';
-    resultMsg = cupName + ' 컵으로 전설을 써내려갔어요! 빗방울 ' + totalCaught + '개 캐치!';
-  } else if (score >= 100) {
-    resultEmoji = '🏆✨';
-    resultTitle = '🌧️ 봄비 마스터!';
-    resultMsg = '대단해요! ' + cupName + ' 컵이 빗방울로 가득 찼어요! ' + totalCaught + '개 캐치!';
-  } else if (score >= 60) {
-    resultEmoji = '💧😊';
-    resultTitle = '잘 했어요!';
-    resultMsg = cupName + ' 컵에 빗방울이 제법 모였네요! 다시 도전해볼까요?';
-  } else if (score >= 30) {
-    resultEmoji = '🌱💦';
-    resultTitle = '조금 더 연습해요!';
-    resultMsg = '빗방울이 생각보다 빠르죠? 컵을 잘 움직여 봐요!';
-  } else {
-    resultEmoji = '☔😅';
-    resultTitle = '다시 도전!';
-    resultMsg = '빗방울을 컵 위치에 맞춰 받아보세요!';
-  }
-
-  document.getElementById('resultEmoji').textContent = resultEmoji;
-  document.getElementById('resultTitle').textContent = resultTitle;
-  document.getElementById('resultScore').textContent = '💧 ' + score + '점';
-  document.getElementById('resultMsg').textContent = resultMsg;
-  document.getElementById('resultChars').innerHTML =
-    '황금 빗방울 ' + goldenCaught + '개 ✨ &nbsp;|&nbsp; 번개 실수 ' + lightningHit + '번 ⚡<br>' +
-    '최대 콤보 ' + maxCombo + '회 🔥';
-
-  showScreen('resultScreen');
+  updateHUD();
 }
-</script>
-</body>
-</html>
+
+// Game loop
+function gameLoop() {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvasW, canvasH);
+
+  // Draw background rain
+  drawBackgroundRain();
+
+  // Draw window/plant decorations
+  drawDecorations();
+
+  if (gameRunning) {
+    updateDrops();
+    updateParticles();
+  }
+
+  drawDrops();
+  drawParticles();
+  drawCup();
+
+  animFrame = requestAnimationFrame(gameLoop);
+}
+
+let bgRainPhase = 0;
+function drawBackgroundRain() {
+  bgRainPhase += 0.5;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(150,190,220,0.15)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 30; i++) {
+    const x = (i * 37 + bgRainPhase * 0.3) % canvasW;
+    const y = (i * 53 + bgRainPhase * 2) % canvasH;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - 1, y + 15);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawDecorations() {
+  // Small plant pot on windowsill
+  const wy = canvasH - 60;
+  ctx.save();
+  ctx.font = '28px serif';
+  ctx.fillText('🌱', 20, wy - 5);
+  ctx.fillText('🌿', canvasW - 50, wy - 5);
+  ctx.restore();
+}
+
+function updateDrops() {
+  const cupW = 70;
+  const cupH = 50;
+  const cupLeft = cupX - cupW / 2;
+  const cupRight = cupX + cupW / 2;
+  const cupTop = cupY - cupH / 2;
+
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const d = drops[i];
+    if (!d.alive) { drops.splice(i, 1); continue; }
+
+    d.y += d.speed;
+    d.wobblePhase += 0.05;
+    d.x += Math.sin(d.wobblePhase) * d.wobble;
+    if (d.type === 'gold') d.sparkle = (d.sparkle + 0.1) % (Math.PI * 2);
+
+    // Check collision with cup
+    if (d.y + d.size > cupTop && d.y - d.size < cupTop + cupH &&
+        d.x > cupLeft && d.x < cupRight) {
+      collectDrop(d, i);
+      continue;
+    }
+
+    // Remove if off screen
+    if (d.y > canvasH + 20) {
+      drops.splice(i, 1);
+      playDrop();
+    }
+  }
+}
+
+function drawDrops() {
+  for (const d of drops) {
+    if (!d.alive) continue;
+    ctx.save();
+
+    if (d.type === 'normal') {
+      // Blue raindrop
+      const grad = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, d.size);
+      grad.addColorStop(0, 'rgba(120,200,255,0.9)');
+      grad.addColorStop(0.6, 'rgba(80,160,240,0.8)');
+      grad.addColorStop(1, 'rgba(60,140,220,0.2)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      // Teardrop shape
+      ctx.moveTo(d.x, d.y - d.size);
+      ctx.bezierCurveTo(d.x + d.size, d.y - d.size * 0.3, d.x + d.size * 0.8, d.y + d.size * 0.7, d.x, d.y + d.size);
+      ctx.bezierCurveTo(d.x - d.size * 0.8, d.y + d.size * 0.7, d.x - d.size, d.y - d.size * 0.3, d.x, d.y - d.size);
+      ctx.fill();
+      // Highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.beginPath();
+      ctx.arc(d.x - d.size * 0.25, d.y - d.size * 0.1, d.size * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (d.type === 'gold') {
+      // Golden sparkly
