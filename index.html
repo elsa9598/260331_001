@@ -663,4 +663,36 @@ function endGame() {
 
   if (score >= 150) {
     resultEmoji = '🌈🏆🌈';
-    resultTitle = '🎊 전설의 봄비 마스터! 🎊
+    resultTitle = '🎊 전설의 봄비 마스터! 🎊';
+    resultMsg = cupName + ' 컵으로 전설을 써내려갔어요! 빗방울 ' + totalCaught + '개 캐치!';
+  } else if (score >= 100) {
+    resultEmoji = '🏆✨';
+    resultTitle = '🌧️ 봄비 마스터!';
+    resultMsg = '대단해요! ' + cupName + ' 컵이 빗방울로 가득 찼어요! ' + totalCaught + '개 캐치!';
+  } else if (score >= 60) {
+    resultEmoji = '💧😊';
+    resultTitle = '잘 했어요!';
+    resultMsg = cupName + ' 컵에 빗방울이 제법 모였네요! 다시 도전해볼까요?';
+  } else if (score >= 30) {
+    resultEmoji = '🌱💦';
+    resultTitle = '조금 더 연습해요!';
+    resultMsg = '빗방울이 생각보다 빠르죠? 컵을 잘 움직여 봐요!';
+  } else {
+    resultEmoji = '☔😅';
+    resultTitle = '다시 도전!';
+    resultMsg = '빗방울을 컵 위치에 맞춰 받아보세요!';
+  }
+
+  document.getElementById('resultEmoji').textContent = resultEmoji;
+  document.getElementById('resultTitle').textContent = resultTitle;
+  document.getElementById('resultScore').textContent = '💧 ' + score + '점';
+  document.getElementById('resultMsg').textContent = resultMsg;
+  document.getElementById('resultChars').innerHTML =
+    '황금 빗방울 ' + goldenCaught + '개 ✨ &nbsp;|&nbsp; 번개 실수 ' + lightningHit + '번 ⚡<br>' +
+    '최대 콤보 ' + maxCombo + '회 🔥';
+
+  showScreen('resultScreen');
+}
+</script>
+</body>
+</html>
