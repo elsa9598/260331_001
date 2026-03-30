@@ -636,8 +636,10 @@ document.addEventListener('mousemove', function(e) {
 });
 
 document.addEventListener('touchmove', function(e) {
-  e.preventDefault();
-  if (gameRunning) cupX = Math.max(40, Math.min(W - 40, e.touches[0].clientX));
+  if (gameRunning) {
+    e.preventDefault();
+    cupX = Math.max(40, Math.min(W - 40, e.touches[0].clientX));
+  }
 }, { passive: false });
 
 document.addEventListener('touchstart', function(e) {
