@@ -371,13 +371,48 @@ function drawBackgroundRain() {
   ctx.globalAlpha = 1;
 }
 
+function catchDrop(d, i) {
+  if (d.type === 'normal') {
+    score += 1; combo++; totalCaught++;
+    spawnParticles(d.x, d.y, 'rgba(100,180,255,0.8)', 8);
+    showScorePop(d.x, d.y - 20, '+1 💧', '#4fc3f7');
+    playDropSound(false);
+  } else if (d.type === 'golden') {
+    score += 5; combo++; goldenCaught++; totalCaught++;
+    spawnParticles(d.x, d.y, 'rgba(255,215,0,0.9)', 15);
+    showScorePop(d.x, d.y - 20, '+5 ✨', '#ffd600');
+    playDropSound(true);
+  } else if (d.type === 'lightning') {
+    score = Math.max(0, score - 3); combo = 0; lightningHit++;
+    spawnParticles(d.x, d.y, 'rgba(255,50,50,0.8)', 12);
+    showScorePop(d.x, d.y - 20, '-3 ⚡', '#ff5252');
+    playLightningSound();
+    ctx.fillStyle = 'rgba(255,255,200,0.3)';
+    ctx.fillRect(0, 0, W, H);
+  }
+  maxCombo = Math.max(maxCombo, combo);
+  drops.splice(i, 1);
+  updateHUD();
+  if (combo > 0 && combo % 10 === 0) {
+    showScorePop(W/2, H/2, '🔥 ' + combo + '콤보!', '#ff6d00');
+  }
+}
+
 function updateAndDrawDrops() {
+  const CUP_W = 60;
+  const CUP_CATCH_Y = cupY - 20;
   for (let i = drops.length - 1; i >= 0; i--) {
     let d = drops[i];
     d.y += d.speed;
     d.wobble += d.wobbleSpeed;
     d.x += Math.sin(d.wobble) * 0.5;
     d.sparkle += 0.1;
+
+    // Cup auto-catch
+    if (d.y >= CUP_CATCH_Y && d.y <= CUP_CATCH_Y + d.speed + 10 && Math.abs(d.x - cupX) < CUP_W / 2 + 8) {
+      catchDrop(d, i);
+      continue;
+    }
 
     if (d.y > H + 40) {
       drops.splice(i, 1);
@@ -595,17 +630,22 @@ function handleTap(tx, ty) {
   }
 }
 
-// Touch/click events
-document.addEventListener('touchstart', function(e) {
+// Cup movement: mouse (desktop) + touch (mobile)
+document.addEventListener('mousemove', function(e) {
+  if (gameRunning) cupX = Math.max(40, Math.min(W - 40, e.clientX));
+});
+
+document.addEventListener('touchmove', function(e) {
   e.preventDefault();
-  for (let t of e.changedTouches) {
-    handleTap(t.clientX, t.clientY);
-  }
+  if (gameRunning) cupX = Math.max(40, Math.min(W - 40, e.touches[0].clientX));
 }, { passive: false });
 
-document.addEventListener('click', function(e) {
-  handleTap(e.clientX, e.clientY);
-});
+document.addEventListener('touchstart', function(e) {
+  if (gameRunning) {
+    e.preventDefault();
+    cupX = Math.max(40, Math.min(W - 40, e.touches[0].clientX));
+  }
+}, { passive: false });
 
 function endGame() {
   gameRunning = false;
