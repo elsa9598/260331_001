@@ -639,4 +639,167 @@ function drawDrops() {
       ctx.arc(d.x - d.size * 0.25, d.y - d.size * 0.1, d.size * 0.2, 0, Math.PI * 2);
       ctx.fill();
     } else if (d.type === 'gold') {
-      // Golden sparkly
+      // Golden sparkly drop
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = 'rgba(255,215,0,0.8)';
+      const ggrad = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, d.size);
+      ggrad.addColorStop(0, 'rgba(255,255,150,0.95)');
+      ggrad.addColorStop(0.5, 'rgba(255,200,0,0.9)');
+      ggrad.addColorStop(1, 'rgba(200,150,0,0.2)');
+      ctx.fillStyle = ggrad;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Sparkle
+      ctx.strokeStyle = 'rgba(255,255,200,0.9)';
+      ctx.lineWidth = 1.5;
+      for (let s = 0; s < 4; s++) {
+        const angle = d.sparkle + s * Math.PI / 2;
+        ctx.beginPath();
+        ctx.moveTo(d.x + Math.cos(angle) * d.size * 0.6, d.y + Math.sin(angle) * d.size * 0.6);
+        ctx.lineTo(d.x + Math.cos(angle) * d.size * 1.4, d.y + Math.sin(angle) * d.size * 1.4);
+        ctx.stroke();
+      }
+    } else if (d.type === 'lightning') {
+      // Red lightning drop
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = 'rgba(255,50,50,0.8)';
+      const lgrad = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, d.size);
+      lgrad.addColorStop(0, 'rgba(255,150,100,0.95)');
+      lgrad.addColorStop(0.5, 'rgba(255,60,60,0.85)');
+      lgrad.addColorStop(1, 'rgba(200,0,0,0.2)');
+      ctx.fillStyle = lgrad;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255,255,200,0.9)';
+      ctx.font = `${d.size}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('⚡', d.x, d.y);
+    }
+
+    ctx.restore();
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.1;
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, p.life);
+    if (p.isText) {
+      ctx.fillStyle = p.color;
+      ctx.font = 'bold 18px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.text, p.x, p.y);
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+function drawCup() {
+  const emoji = selectedCup === 'kimchi' ? '🤍' : '🐩';
+  const cupW = 70;
+  const cupH = 50;
+
+  ctx.save();
+  // Cup body
+  ctx.fillStyle = selectedCup === 'kimchi' ? 'rgba(255,230,240,0.85)' : 'rgba(200,230,255,0.85)';
+  ctx.strokeStyle = selectedCup === 'kimchi' ? 'rgba(200,150,180,0.9)' : 'rgba(100,160,220,0.9)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(cupX - cupW / 2, cupY - cupH / 2);
+  ctx.lineTo(cupX - cupW * 0.4, cupY + cupH / 2);
+  ctx.lineTo(cupX + cupW * 0.4, cupY + cupH / 2);
+  ctx.lineTo(cupX + cupW / 2, cupY - cupH / 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // Rim
+  ctx.fillStyle = selectedCup === 'kimchi' ? 'rgba(230,180,200,0.9)' : 'rgba(150,190,240,0.9)';
+  ctx.beginPath();
+  ctx.ellipse(cupX, cupY - cupH / 2, cupW / 2, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  // Character emoji
+  ctx.font = '22px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, cupX, cupY + 5);
+  ctx.restore();
+}
+
+function endGame() {
+  gameRunning = false;
+  clearInterval(gameTimer);
+  clearInterval(spawnTimer);
+  cancelAnimationFrame(animFrame);
+
+  // Determine badge
+  let badge, title, chars;
+  if (score >= 80) {
+    badge = '빗방울 전설 🏆';
+    title = '완벽해! 🌟';
+    chars = '🐩🤍✨';
+  } else if (score >= 50) {
+    badge = '빗방울 마스터 🌈';
+    title = '대단해! 🎉';
+    chars = '🐩🤍';
+  } else if (score >= 30) {
+    badge = '봄비 수집가 ☔';
+    title = '잘했어! 😊';
+    chars = selectedCup === 'kimchi' ? '🤍' : '🐩';
+  } else {
+    badge = '봄비 초보 🌱';
+    title = '다시 도전! 💪';
+    chars = selectedCup === 'kimchi' ? '🤍' : '🐩';
+  }
+
+  document.getElementById('resultTitle') && (document.getElementById('resultTitle').textContent = title);
+  document.getElementById('resultScore').textContent = score;
+  document.getElementById('resultChars').textContent = chars;
+  document.getElementById('resultBadge').textContent = badge;
+  document.getElementById('resultDetail').textContent =
+    `삼성전자: ${score}방울 수집 • 3단계 완주`;
+
+  showScreen('resultScreen');
+}
+
+function resetGame() {
+  selectedCup = null;
+  score = 0;
+  timeLeft = 60;
+  currentStage = 1;
+  gameRunning = false;
+  drops = [];
+  particles = [];
+  document.getElementById('cupBaechu').classList.remove('selected');
+  document.getElementById('cupKimchi').classList.remove('selected');
+  document.getElementById('startBtn').disabled = true;
+  showScreen('startScreen');
+}
+
+// Init
+showScreen('startScreen');
+</script>
+</body>
+</html>
